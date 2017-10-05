@@ -73,15 +73,23 @@ module.exports = function(data, cb) {
   for (var w = 0; w < email.bcc.length; w++) {
     email.bcc[w].address = email.bcc[w].address.toLowerCase();
   }
+  
+  email = parsePayloadParts(email, [data.payload]);
 
-  if (data.payload.parts && data.payload.parts[0]) {
-    var parts = data.payload.parts;
-    email.attachments = [];
+  return cb(null, email);
+};
 
-    for (var k = 0; k < parts.length; k++) {
-      var item = parts[k];
-      if (item !== null || item !== undefined) {
-        if (item.body !== null ? item.body.attachmentId : void 0) {
+let parsePayloadParts = function(email, parts) {
+  email.attachments = [];
+
+  while (parts.length !== 0) {
+    let item = parts.shift();
+    if (item.parts) {
+      parts = parts.concat(item.parts);
+    }
+
+    if (item !== null || item !== undefined) {
+      if (item.body !== null ? item.body.attachmentId : void 0) {
           email.attachments.push({
             filename: item.filename,
             mimetype: item.mimeType,
@@ -97,6 +105,6 @@ module.exports = function(data, cb) {
         }
       }
     }
-  }
-  return cb(null, email);
-};
+
+    return email;
+}
